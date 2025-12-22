@@ -1,6 +1,7 @@
 #include "gtransform.h"
 #include <QPixmap>
 #include <QPainter>
+#include<QFileDialog>
 gtransform::gtransform(QWidget *parent)
     : QWidget(parent)
 {
@@ -12,14 +13,24 @@ gtransform::gtransform(QWidget *parent)
     hCheckBox = new QCheckBox (QStringLiteral ("水平"), mirrorGroup);
     vCheckBox = new QCheckBox (QStringLiteral("垂直"), mirrorGroup);
     mirrorButton = new QPushButton (QStringLiteral("執行"), mirrorGroup);
+    saveButton = new QPushButton (QStringLiteral("存檔"), mirrorGroup);
+
     hCheckBox->setGeometry (QRect(13, 28, 87, 19));
     vCheckBox->setGeometry (QRect (13, 54, 87, 19));
     mirrorButton->setGeometry (QRect(13, 80, 93, 28));
+    saveButton->setGeometry (QRect(13, 90, 93, 28));
+
     groupLayout->addWidget (hCheckBox);
     groupLayout->addWidget (vCheckBox);
-    groupLayout->addWidget (mirrorButton); leftLayout->addWidget (mirrorGroup);
+    groupLayout->addWidget (mirrorButton);
+    groupLayout->addWidget (saveButton);
+    leftLayout->addWidget (mirrorGroup);
+
     rotateDial = new QDial (this);
     rotateDial->setNotchesVisible(true);
+    rotateDial->setRange(0, 360);
+    rotateDial->setWrapping(true);
+
     vSpacer = new QSpacerItem (20, 58, QSizePolicy:: Minimum,
                               QSizePolicy:: Expanding);
     leftLayout->addWidget (rotateDial);
@@ -43,6 +54,7 @@ gtransform::gtransform(QWidget *parent)
     //------------------------------------------------
     inWin->setPixmap(*initPixmap);
     inWin->setSizePolicy (QSizePolicy:: Expanding, QSizePolicy:: Expanding);
+
     if (srcImg.isNull())
     {
         QPixmap *initPixmap= new QPixmap (300,200);
@@ -50,7 +62,9 @@ gtransform::gtransform(QWidget *parent)
         inWin->setPixmap (*initPixmap);
     }
     mainLayout->addWidget (inWin);
+
     connect (mirrorButton, SIGNAL (clicked()), this, SLOT (mirroredImage()));
+    connect (saveButton, SIGNAL (clicked()), this, SLOT (saveimage()));
     connect (rotateDial, SIGNAL (valueChanged(int)), this, SLOT (rotatedImage()));
 }
 
@@ -58,6 +72,17 @@ gtransform::~gtransform() {
 
 }
 
+void gtransform:: saveimage(){
+    QString filepath = QFileDialog::getSaveFileName(this,
+                                                    QStringLiteral("存檔"),
+                                                    "",
+                                                    QStringLiteral("PNG Files (*.png)"));
+    if (filepath.isEmpty())
+        return;
+    if (!dstImg.isNull()) {
+        dstImg.save(filepath);
+    }
+}
 void gtransform::mirroredImage ()
 {
     bool H,V;
@@ -67,7 +92,7 @@ void gtransform::mirroredImage ()
     V=vCheckBox->isChecked();
     dstImg=srcImg.mirrored (H,V);
     inWin->setPixmap (QPixmap:: fromImage (dstImg));
-    //srcImg = dstImg;
+    srcImg = dstImg;
 }
 void gtransform::rotatedImage ()
 {
